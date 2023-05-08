@@ -1,0 +1,57 @@
+# path to the checkpoint file containing the model
+model_path: model_pth/residual/0.002GDL/best_checkpoint.pytorch
+#predict_path: 'model_pth/residual/0.002GDL/predict_nii_test/'
+#predict_crf_path: 'model_pth/residual/0.002GDL/predict_crf_nii/'
+#fpd_path: 'model_pth/residual/0.002GDL/DS_test/fpd_nii/'
+#fnd_path: 'model_pth/residual/0.002GDL/DS_test/fnd_nii/'
+device: 'cuda:1'
+# Should the patches be stored in memory or written directly to H5 during prediction.
+# Set to True if you have enough RAM cause it's way faster
+store_predictions_in_memory: True
+# model configuration
+model:
+  # model class
+  name: ResidualUNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels
+  out_channels: 1
+  # determines the order of operators in a single layer (crg - Conv3d+ReLU+GroupNorm)
+  layer_order: crg
+  # feature maps scale factor
+  f_maps: 32
+  # basic module
+  basic_module: DoubleConv
+  # number of groups in the groupnorm
+  num_groups: 8
+  # apply element-wise nn.Sigmoid after the final 1x1 convolution, otherwise apply nn.Softmax
+  final_sigmoid: True
+# specify the test datasets
+datasets:
+  # patch size given to the network (adapt to fit in your GPU mem)
+  patch: [64, 128, 128]
+  # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
+  stride: [16, 64, 64]
+  # path to the raw data within the H5
+  raw_internal_path: raw
+  # how many subprocesses to use for data loading
+  num_workers: 8
+  # paths to the datasets
+  test_path: '/home/ext/chenzhihao/Datasets/StructSeg_2019/Lung_GTV/test'
+
+  transformer:
+    # window width and level
+    # task3,task4: WW=1500, WL=-500
+    # task1,task2: WW=350, WL=40
+    WW: 1500
+    WL: -500
+    ignore_bg: 0
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: ToTensor
+          expand_dims: false
+          dtype: 'long'
